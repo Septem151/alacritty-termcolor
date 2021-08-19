@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+IFS=$'\n' read -r -d '' -a colors_list < <( termcolor list && printf '\0' )
+color_choices="random"
+for color in "${colors_list[@]}"
+do
+    color_choices="${color_choices} ${color}"
+done
+
+_setupcompletion()
+{
+    local cur prev
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    case ${COMP_CWORD} in
+        1)
+            COMPREPLY=( $(compgen -W "color opacity info list" -- ${cur}) )
+            ;;
+        2)
+            case ${prev} in
+                color)
+                    COMPREPLY=( $(compgen -W "${color_choices}" -- ${cur}) )
+                    ;;
+            esac
+            ;;
+        *)
+            COMPREPLY=()
+            ;;
+    esac
+    return 0
+}
+
+complete -F _setupcompletion termcolor

@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+import argparse
+import random
+import typing as t
+from pathlib import Path
+
+scheme_file = Path(__file__).resolve().parent / "schemes.yml"
+config_file = Path(__file__).resolve().parent / "alacritty.yml"
+
+color_choices = [
+    "afterglow",
+    "argonaut",
+    "ayu_dark",
+    "base16_dark",
+    "blood_moon",
+    "breeze",
+    "campbell",
+    "challenger_deep",
+    "Cobalt2",
+    "cyber_punk_neon",
+    "darcula",
+    "dark_pastels",
+    "doom_one",
+    "dracula",
+    "falcon",
+    "flat_remix",
+    "gotham",
+    "gruvbox_dark",
+    "gruvbox_light",
+    "gruvbox_material",
+    "high_contrast",
+    "horizon-dark",
+    "hyper",
+    "iterm_default",
+    "konsole_linux",
+    "low_contrast",
+    "material_theme",
+    "material_theme_mod",
+    "nord",
+    "oceanic_next",
+    "omni",
+    "one_dark",
+    "palenight",
+    "papercolor_light",
+    "pencil_dark",
+    "pencil_light",
+    "remedy_dark",
+    "snazzy",
+    "seashells",
+    "solarized_dark",
+    "solarized_light",
+    "taerminal",
+    "tango_dark",
+    "tender",
+    "terminal_app",
+    "thelovelace",
+    "tokyo-night",
+    "tokyo-night-storm",
+    "tomorrow_night",
+    "tomorrow_night_bright",
+    "wombat",
+    "xterm",
+]
+
+
+class OpacityAction(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values == "random":
+            values = round(random.uniform(0, 1), 2)
+        try:
+            if not 0 <= float(values) <= 1:
+                raise argparse.ArgumentError(self, f"opacity must be between 0 and 1")
+        except TypeError:
+            raise argparse.ArgumentError(self, "opacity must be a float")
+        setattr(namespace, self.dest, values)
+
+
+def color_cmd(args):
+    color: str = args.color
+    color = random.choice(color_choices) if color == "random" else color
+    with open(scheme_file, "r") as scheme:
+        lines = scheme.readlines()
+    with open(scheme_file, "w") as scheme:
+        lines[-1] = f"colors: *{color}\n"
+        scheme.writelines(lines)
+    print(f"color set to {color}")
+
+
+def opacity_cmd(args):
+    opacity: float = args.opacity
+    with open(config_file, "r") as config:
+        lines = config.readlines()
+    index = [i for i, line in enumerate(lines) if "background_opacity" in line][0]
+    lines[index] = f"background_opacity: {opacity}\n"
+    with open(config_file, "w") as config:
+        config.writelines(lines)
+    print(f"opacity set to {opacity}")
+
+
+def list_cmd(args):
+    for color in color_choices:
+        print(color)
+
+
+def info_cmd(args):
+    with open(scheme_file, "r") as scheme:
+        lines = scheme.readlines()
+    color = lines[-1].strip()[9:]
+    with open(config_file, "r") as config:
+        lines = config.readlines()
+    index = [i for i, line in enumerate(lines) if "background_opacity" in line][0]
+    opacity = lines[index].strip()[20:]
+    print(f"color: {color}")
+    print(f"opacity: {opacity}")
+
+
+def help_cmd(parser):
+    parser.print_help()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="termcolor", description="sets alacritty to a random color or opacity"
+    )
+    parser.set_defaults(func=help_cmd)
+    subparsers = parser.add_subparsers(dest="command", required=False)
+    color_parser = subparsers.add_parser("color", help="set the terminal's color")
+    color_parser.add_argument(
+        "color",
+        help='the color scheme to use, or "random" for random color scheme (default: "random") ',
+        type=str,
+        choices=color_choices.copy().extend(["random"]),
+        metavar="color",
+    )
+    color_parser.set_defaults(func=color_cmd)
+    opacity_parser = subparsers.add_parser("opacity", help="set the terminal's opacity")
+    opacity_parser.add_argument(
+        "opacity",
+        help="the opacity value [0...1]",
+        action=OpacityAction,
+        metavar="opacity",
+    )
+    opacity_parser.set_defaults(func=opacity_cmd)
+    info_parser = subparsers.add_parser(
+        "info", help="print the current color and opacity"
+    )
+    info_parser.add_argument(
+        "info",
+        help="print the terminal's current color and opacity",
+        action="store_true",
+    )
+    info_parser.set_defaults(func=info_cmd)
+    list_parser = subparsers.add_parser("list", help="list all available color options")
+    list_parser.add_argument(
+        "list", help="list all available colors", action="store_true"
+    )
+    list_parser.set_defaults(func=list_cmd)
+    args = parser.parse_args()
+    if args.command is not None:
+        args.func(args)
+    else:
+        args.func(parser)
+
+
+if __name__ == "__main__":
+    main()
