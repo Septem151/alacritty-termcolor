@@ -4,8 +4,8 @@ import random
 import typing as t
 from pathlib import Path
 
-scheme_file = Path(__file__).resolve().parent / "schemes.yml"
-config_file = Path(__file__).resolve().parent / "alacritty.yml"
+scheme_file = Path.home() / ".config/alacritty/schemes.yml"
+config_file = Path.home() / ".config/alacritty/alacritty.yml"
 
 color_choices = [
     "afterglow",
