@@ -93,8 +93,9 @@ def opacity_cmd(args):
     opacity: float = args.opacity
     with open(config_file, "r") as config:
         lines = config.readlines()
-    index = [i for i, line in enumerate(lines) if "background_opacity" in line][0]
-    lines[index] = f"background_opacity: {opacity}\n"
+    index = [i for i, line in enumerate(lines) if "opacity:" in line and line.strip()[0] != "#"][0]
+    spaces = len(lines[index]) - len(lines[index].lstrip(" "))
+    lines[index] = f"{' ' * spaces}opacity: {opacity}\n"
     with open(config_file, "w") as config:
         config.writelines(lines)
     print(f"opacity set to {opacity}")
@@ -111,8 +112,8 @@ def info_cmd(args):
     color = lines[-1].strip()[9:]
     with open(config_file, "r") as config:
         lines = config.readlines()
-    index = [i for i, line in enumerate(lines) if "background_opacity" in line][0]
-    opacity = lines[index].strip()[20:]
+    index = [i for i, line in enumerate(lines) if "opacity:" in line and line.strip()[0] != "#"][0]
+    opacity = lines[index].replace("opacity:", "").strip()
     print(f"color: {color}")
     print(f"opacity: {opacity}")
 
